@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braille Art Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 30px 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            background: rgba(102, 126, 234, 0.05);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+
+        .upload-area:hover::before {
+            opacity: 1;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .upload-text {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .upload-hint {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .control-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group input[type="range"] {
+            flex: 1;
+            height: 40px;
+            border-radius: 20px;
+            background: #ddd;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .control-group select {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            color: #333;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .control-group select:focus {
+            border-color: #667eea;
+        }
+
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .preview-box {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .preview-box h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        #originalImage {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .braille-output {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 15px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            white-space: pre;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .braille-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .braille-output::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 10px;
+        }
+
+        .braille-output::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 280px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 87, 108, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                margin: 5px;
+                border-radius: 10px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 15px;
+            }
+            
+            .upload-area {
+                padding: 20px 10px;
+                min-height: 100px;
+            }
+            
+            .upload-icon {
+                font-size: 2.5em;
+            }
+            
+            .upload-text {
+                font-size: 1em;
+            }
+            
+            .upload-hint {
+                font-size: 0.8em;
+            }
+            
+            .controls {
+                padding: 10px;
+                gap: 12px;
+            }
+            
+            .braille-output {
+                font-size: 8px;
+                max-height: 200px;
+                padding: 10px;
+            }
+            
+            .btn {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+                margin: 2px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+            }
+            
+            .braille-output {
+                font-size: 7px;
+                max-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⠠⠃⠗⠁⠊⠇⠇⠑ ⠠⠁⠗⠞ ⠠⠛⠑⠝⠑⠗⠁⠞⠕⠗</h1>
+        
+        <div class="upload-section">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">Click to upload an image</div>
+                <div class="upload-hint">Supports JPG, PNG, GIF, WebP</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="widthSlider">Width</label>
+                <div class="control-row">
+                    <input type="range" id="widthSlider" min="20" max="200" value="60">
+                    <span class="control-value" id="widthValue">60</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="contrastSlider">Contrast</label>
+                <div class="control-row">
+                    <input type="range" id="contrastSlider" min="0.5" max="3" value="1.5" step="0.1">
+                    <span class="control-value" id="contrastValue">1.5</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="brightnessSlider">Brightness</label>
+                <div class="control-row">
+                    <input type="range" id="brightnessSlider" min="0.5" max="2" value="1" step="0.1">
+                    <span class="control-value" id="brightnessValue">1.0</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="patternSelect">Pattern Style</label>
+                <select id="patternSelect">
+                    <option value="standard">Standard Braille</option>
+                    <option value="dense">Dense Dots</option>
+                    <option value="sparse">Sparse Dots</option>
+                    <option value="artistic">Artistic Mix</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            Processing image...
+        </div>
+
+        <div class="preview-section">
+            <div class="preview-box">
+                <h3>Original Image</h3>
+                <img id="originalImage" style="display: none;" alt="Original image">
+                <div id="imagePlaceholder" style="color: #999; font-style: italic;">No image selected</div>
+            </div>
+            <div class="preview-box">
+                <h3>Braille Art</h3>
+                <div class="braille-output" id="brailleOutput">Upload an image to generate braille art...</div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="generateBtn" disabled>Generate Braille Art</button>
+            <button class="btn btn-secondary" id="copyBtn" disabled>Copy to Clipboard</button>
+            <button class="btn btn-secondary" id="downloadBtn" disabled>Download as Text</button>
+        </div>
+    </div>
+
+    <script>
+        // Braille patterns for different densities
+        const braillePatterns = {
+            standard: [
+                '⠀', '⠁', '⠃', '⠇', '⠏', '⠟', '⠿', '⣿'
+            ],
+            dense: [
+                '⠀', '⠂', '⠆', '⠖', '⠶', '⠷', '⠿', '⣿'
+            ],
+            sparse: [
+                '⠀', '⠁', '⠉', '⠋', '⠛', '⠟', '⠿', '⣿'
+            ],
+            artistic: [
+                '⠀', '⠁', '⠃', '⠉', '⠋', '⠛', '⠝', '⠟', '⠿', '⣿'
+            ]
+        };
+
+        let currentImage = null;
+        let brailleText = '';
+
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const originalImage = document.getElementById('originalImage');
+        const imagePlaceholder = document.getElementById('imagePlaceholder');
+        const brailleOutput = document.getElementById('brailleOutput');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        // Control elements
+        const widthSlider = document.getElementById('widthSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const patternSelect = document.getElementById('patternSelect');
+
+        // Value displays
+        const widthValue = document.getElementById('widthValue');
+        const contrastValue = document.getElementById('contrastValue');
+        const brightnessValue = document.getElementById('brightnessValue');
+
+        // Mobile optimizations
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        // Prevent zoom on double tap
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        let lastTouchEnd = 0;
+
+        // Event listeners
+        fileInput.addEventListener('change', handleFileSelect);
+        generateBtn.addEventListener('click', generateBrailleArt);
+        copyBtn.addEventListener('click', copyToClipboard);
+        downloadBtn.addEventListener('click', downloadAsText);
+
+        // Slider event listeners
+        widthSlider.addEventListener('input', (e) => {
+            widthValue.textContent = e.target.value;
+            if (currentImage) generateBrailleArt();
+        });
+
+        contrastSlider.addEventListener('input', (e) => {
+            contrastValue.textContent = parseFloat(e.target.value).toFixed(1);
+            if (currentImage) generateBrailleArt();
+        });
+
+        brightnessSlider.addEventListener('input', (e) => {
+            brightnessValue.textContent = parseFloat(e.target.value).toFixed(1);
+            if (currentImage) generateBrailleArt();
+        });
+
+        patternSelect.addEventListener('change', () => {
+            if (currentImage) generateBrailleArt();
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = new Image();
+                currentImage.onload = () => {
+                    originalImage.src = e.target.result;
+                    originalImage.style.display = 'block';
+                    imagePlaceholder.style.display = 'none';
+                    generateBtn.disabled = false;
+                    generateBrailleArt();
+                };
+                currentImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function generateBrailleArt() {
+            if (!currentImage) return;
+
+            loadingIndicator.classList.add('active');
+            generateBtn.disabled = true;
+
+            // Use setTimeout to allow UI to update
+            setTimeout(() => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const targetWidth = parseInt(widthSlider.value);
+                    const aspectRatio = currentImage.height / currentImage.width;
+                    const targetHeight = Math.round(targetWidth * aspectRatio * 0.4); // Adjust for mobile braille aspect ratio
+                    
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+                    
+                    // Apply brightness and contrast
+                    ctx.filter = `brightness(${brightnessSlider.value}) contrast(${contrastSlider.value})`;
+                    ctx.drawImage(currentImage, 0, 0, targetWidth, targetHeight);
+                    
+                    const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+                    const pixels = imageData.data;
+                    
+                    const selectedPattern = braillePatterns[patternSelect.value];
+                    brailleText = '';
+                    
+                    for (let y = 0; y < targetHeight; y++) {
+                        for (let x = 0; x < targetWidth; x++) {
+                            const index = (y * targetWidth + x) * 4;
+                            const r = pixels[index];
+                            const g = pixels[index + 1];
+                            const b = pixels[index + 2];
+                            
+                            // Convert to grayscale
+                            const gray = (r * 0.299 + g * 0.587 + b * 0.114);
+                            
+                            // Map brightness to braille pattern
+                            const brightnessIndex = Math.floor((gray / 255) * (selectedPattern.length - 1));
+                            brailleText += selectedPattern[brightnessIndex];
+                        }
+                        brailleText += '\n';
+                    }
+                    
+                    brailleOutput.textContent = brailleText;
+                    copyBtn.disabled = false;
+                    downloadBtn.disabled = false;
+                    
+                } catch (error) {
+                    console.error('Error generating braille art:', error);
+                    brailleOutput.textContent = 'Error generating braille art. Please try again.';
+                } finally {
+                    loadingIndicator.classList.remove('active');
+                    generateBtn.disabled = false;
+                }
+            }, 100);
+        }
+
+        function copyToClipboard() {
+            if (!brailleText) return;
+            
+            navigator.clipboard.writeText(brailleText).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function downloadAsText() {
+            if (!brailleText) return;
+            
+            const blob = new Blob([brailleText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'braille_art.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#764ba2';
+            uploadArea.style.background = 'rgba(118, 75, 162, 0.1)';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.background = 'rgba(102, 126, 234, 0.05)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.background = 'rgba(102, 126, 234, 0.05)';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        });
+    </script>
+</body>
+</html>
