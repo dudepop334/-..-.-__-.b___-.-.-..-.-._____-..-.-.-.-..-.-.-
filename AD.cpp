@@ -1,296 +1,266 @@
 #include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <chrono>
-#include <thread>
-#include <memory>
-#include <map>
-#include <set>
-#include <queue>
-#include <stack>
 #include <fstream>
-#include <sstream>
-#include <cmath>
-#include <random>
-#include <functional>
+#include <string>
+#include <regex>
+#include <vector>
 
-// A class that doesn't do anything
-class DoNothingClass {
+class GoogleAdsInjector {
 private:
-    int meaninglessNumber;
-    std::string pointlessString;
-    std::vector<int> uselessVector;
-    
+    std::string adSenseCode;
+    std::string adClientId;
+    std::string adSlotId;
+
 public:
-    // Constructor that initializes nothing meaningful
-    DoNothingClass() : meaninglessNumber(42), pointlessString("hello") {
-        uselessVector.resize(10);
-        for(int i = 0; i < 10; i++) {
-            uselessVector[i] = i * 2;
+    // Constructor with default Google AdSense template
+    GoogleAdsInjector(const std::string& clientId, const std::string& slotId) 
+        : adClientId(clientId), adSlotId(slotId) {
+        generateAdCode();
+    }
+    
+    // Generate Google AdSense ad code
+    void generateAdCode() {
+        adSenseCode = R"(
+<!-- Google AdSense Ad -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=)" + adClientId + R"("
+     crossorigin="anonymous"></script>
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client=")" + adClientId + R"("
+     data-ad-slot=")" + adSlotId + R"("
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<!-- End Google AdSense Ad -->
+)";
+    }
+    
+    // Generate responsive banner ad
+    std::string generateBannerAd() {
+        return R"(
+<!-- Google AdSense Banner Ad -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=)" + adClientId + R"("
+     crossorigin="anonymous"></script>
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client=")" + adClientId + R"("
+     data-ad-slot=")" + adSlotId + R"("
+     data-ad-format="banner"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<!-- End Google AdSense Banner Ad -->
+)";
+    }
+    
+    // Generate square ad
+    std::string generateSquareAd() {
+        return R"(
+<!-- Google AdSense Square Ad -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=)" + adClientId + R"("
+     crossorigin="anonymous"></script>
+<ins class="adsbygoogle"
+     style="display:inline-block;width:300px;height:250px"
+     data-ad-client=")" + adClientId + R"("
+     data-ad-slot=")" + adSlotId + R"("></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<!-- End Google AdSense Square Ad -->
+)";
+    }
+    
+    // Read HTML file
+    std::string readFile(const std::string& filename) {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            throw std::runtime_error("Could not open file: " + filename);
         }
+        
+        std::string content((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
+        file.close();
+        return content;
     }
     
-    // A method that calculates something but doesn't use it
-    void calculateSomethingUseless() {
-        double result = 0.0;
-        for(int i = 1; i <= 1000; i++) {
-            result += std::sin(i) * std::cos(i);
-        }
-        // Result is calculated but never used or returned
-    }
-    
-    // A method that creates data structures but doesn't do anything with them
-    void createUselessDataStructures() {
-        std::map<std::string, int> emptyMap;
-        std::set<double> emptySet;
-        std::queue<char> emptyQueue;
-        std::stack<bool> emptyStack;
-        
-        // Fill them with data that won't be used
-        emptyMap["key1"] = 10;
-        emptyMap["key2"] = 20;
-        emptySet.insert(3.14);
-        emptySet.insert(2.71);
-        emptyQueue.push('a');
-        emptyQueue.push('b');
-        emptyStack.push(true);
-        emptyStack.push(false);
-        
-        // Data structures go out of scope and are destroyed
-    }
-    
-    // A recursive function that does nothing useful
-    int uselessRecursion(int n) {
-        if(n <= 0) return 0;
-        return uselessRecursion(n - 1) + 0; // Always adds 0
-    }
-    
-    // A method with complex logic that achieves nothing
-    void complexButUseless() {
-        std::vector<std::string> words = {"apple", "banana", "cherry", "date", "elderberry"};
-        
-        // Sort them
-        std::sort(words.begin(), words.end());
-        
-        // Reverse them
-        std::reverse(words.begin(), words.end());
-        
-        // Shuffle them
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(words.begin(), words.end(), g);
-        
-        // Count characters but don't use the count
-        int totalChars = 0;
-        for(const auto& word : words) {
-            totalChars += word.length();
+    // Write HTML file
+    void writeFile(const std::string& filename, const std::string& content) {
+        std::ofstream file(filename);
+        if (!file.is_open()) {
+            throw std::runtime_error("Could not create file: " + filename);
         }
         
-        // Create a lambda that does nothing
-        auto doNothing = [](int x) { return x; };
-        int meaninglessResult = doNothing(totalChars);
+        file << content;
+        file.close();
+    }
+    
+    // Insert ad after opening body tag
+    std::string insertAdAfterBodyOpen(const std::string& html) {
+        std::regex bodyRegex("(<body[^>]*>)", std::regex_constants::icase);
+        return std::regex_replace(html, bodyRegex, "$1\n" + adSenseCode);
+    }
+    
+    // Insert ad before closing body tag
+    std::string insertAdBeforeBodyClose(const std::string& html) {
+        std::regex bodyRegex("(</body>)", std::regex_constants::icase);
+        return std::regex_replace(html, bodyRegex, adSenseCode + "\n$1");
+    }
+    
+    // Insert ad after specific heading tags
+    std::string insertAdAfterHeadings(const std::string& html, const std::string& headingTag = "h2") {
+        std::string pattern = "(</" + headingTag + ">)";
+        std::regex headingRegex(pattern, std::regex_constants::icase);
+        return std::regex_replace(html, headingRegex, "$1\n" + adSenseCode);
+    }
+    
+    // Insert ad after every N paragraphs
+    std::string insertAdAfterParagraphs(const std::string& html, int paragraphCount = 3) {
+        std::string result = html;
+        std::regex pRegex("</p>", std::regex_constants::icase);
+        std::sregex_iterator iter(result.begin(), result.end(), pRegex);
+        std::sregex_iterator end;
         
-        // Use smart pointers for no reason
-        std::unique_ptr<int> ptr = std::make_unique<int>(meaninglessResult);
-        std::shared_ptr<double> sharedPtr = std::make_shared<double>(3.14159);
+        int count = 0;
+        std::vector<size_t> positions;
         
-        // Pointers go out of scope and are automatically cleaned up
-    }
-};
-
-// A function that simulates work but does nothing
-void simulateWork() {
-    // Create multiple threads that do nothing
-    std::vector<std::thread> threads;
-    
-    for(int i = 0; i < 4; i++) {
-        threads.emplace_back([]() {
-            // Each thread sleeps for a random amount of time
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(1, 100);
-            
-            std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
-            // Thread does nothing after sleeping
-        });
-    }
-    
-    // Wait for all threads to finish doing nothing
-    for(auto& t : threads) {
-        t.join();
-    }
-}
-
-// A template function that does nothing with any type
-template<typename T>
-void doNothingWithType(T value) {
-    T copy = value;
-    T* pointer = &copy;
-    T& reference = copy;
-    // Variables exist but nothing is done with them
-}
-
-// A function that reads a file that doesn't exist and handles the error by doing nothing
-void tryToReadNonexistentFile() {
-    std::ifstream file("nonexistent_file.txt");
-    if(!file.is_open()) {
-        // File doesn't exist, but we do nothing about it
-        return;
-    }
-    
-    std::string line;
-    while(std::getline(file, line)) {
-        // Read lines but don't process them
-    }
-    file.close();
-}
-
-// A function that creates and destroys objects pointlessly
-void createAndDestroyObjects() {
-    for(int i = 0; i < 100; i++) {
-        DoNothingClass* obj = new DoNothingClass();
-        obj->calculateSomethingUseless();
-        obj->createUselessDataStructures();
-        obj->complexButUseless();
-        delete obj; // Clean up memory
-    }
-}
-
-// A function with nested loops that accomplish nothing
-void nestedLoopsOfNothingness() {
-    for(int i = 0; i < 50; i++) {
-        for(int j = 0; j < 50; j++) {
-            for(int k = 0; k < 50; k++) {
-                int result = i + j + k;
-                result = result * 2;
-                result = result / 2;
-                result = result - (i + j + k);
-                // Result is always 0, and we do nothing with it
+        // Find positions where we want to insert ads
+        for (std::sregex_iterator i = iter; i != end; ++i) {
+            count++;
+            if (count % paragraphCount == 0) {
+                positions.push_back(i->position() + i->length());
             }
         }
-    }
-}
-
-// A function that sorts an array that's already sorted
-void sortAlreadySortedArray() {
-    std::vector<int> numbers;
-    for(int i = 1; i <= 1000; i++) {
-        numbers.push_back(i);
-    }
-    
-    // Array is already sorted, but sort it anyway
-    std::sort(numbers.begin(), numbers.end());
-    
-    // Verify it's sorted (it will be)
-    bool isSorted = std::is_sorted(numbers.begin(), numbers.end());
-    
-    // Do nothing with this information
-}
-
-// A class hierarchy that serves no purpose
-class BaseUselessClass {
-public:
-    virtual void doNothing() {
-        // Base implementation does nothing
-    }
-    
-    virtual ~BaseUselessClass() = default;
-};
-
-class DerivedUselessClass : public BaseUselessClass {
-public:
-    void doNothing() override {
-        // Override to do nothing differently
-        BaseUselessClass::doNothing();
-    }
-    
-    void additionalNothingness() {
-        // More nothing
-    }
-};
-
-// Function that uses polymorphism to do nothing
-void polymorphicNothingness() {
-    std::vector<std::unique_ptr<BaseUselessClass>> objects;
-    
-    for(int i = 0; i < 10; i++) {
-        if(i % 2 == 0) {
-            objects.push_back(std::make_unique<BaseUselessClass>());
-        } else {
-            objects.push_back(std::make_unique<DerivedUselessClass>());
+        
+        // Insert ads from back to front to maintain correct positions
+        for (auto it = positions.rbegin(); it != positions.rend(); ++it) {
+            result.insert(*it, "\n" + adSenseCode);
         }
+        
+        return result;
     }
     
-    for(auto& obj : objects) {
-        obj->doNothing();
+    // Insert multiple ad types at different positions
+    std::string insertMultipleAds(const std::string& html) {
+        std::string result = html;
+        
+        // Add banner ad after body opens
+        result = insertAdAfterBodyOpen(result);
+        
+        // Add square ads after every 2 h2 tags
+        std::string squareAd = generateSquareAd();
+        std::regex h2Regex("(</h2>)", std::regex_constants::icase);
+        int h2Count = 0;
+        std::string tempResult = result;
+        std::sregex_iterator iter(tempResult.begin(), tempResult.end(), h2Regex);
+        std::sregex_iterator end;
+        
+        std::vector<size_t> h2Positions;
+        for (std::sregex_iterator i = iter; i != end; ++i) {
+            h2Count++;
+            if (h2Count % 2 == 0) {
+                h2Positions.push_back(i->position() + i->length());
+            }
+        }
+        
+        for (auto it = h2Positions.rbegin(); it != h2Positions.rend(); ++it) {
+            result.insert(*it, "\n" + squareAd);
+        }
+        
+        // Add banner ad before body closes
+        result = insertAdBeforeBodyClose(result);
+        
+        return result;
     }
-}
+};
 
-// Main function that orchestrates all the nothingness
 int main() {
-    // Create an object that does nothing
-    DoNothingClass nothingObject;
-    
-    // Call methods that do nothing
-    nothingObject.calculateSomethingUseless();
-    nothingObject.createUselessDataStructures();
-    nothingObject.complexButUseless();
-    
-    // Call the recursive function that returns 0
-    int recursionResult = nothingObject.uselessRecursion(10);
-    
-    // Simulate work without doing any real work
-    simulateWork();
-    
-    // Use templates to do nothing with different types
-    doNothingWithType<int>(42);
-    doNothingWithType<std::string>("hello");
-    doNothingWithType<double>(3.14159);
-    
-    // Try to read a file that doesn't exist
-    tryToReadNonexistentFile();
-    
-    // Create and destroy objects for no reason
-    createAndDestroyObjects();
-    
-    // Run nested loops that accomplish nothing
-    nestedLoopsOfNothingness();
-    
-    // Sort an already sorted array
-    sortAlreadySortedArray();
-    
-    // Use polymorphism to do nothing
-    polymorphicNothingness();
-    
-    // Declare variables that won't be used
-    int unusedInt = 100;
-    double unusedDouble = 2.71828;
-    std::string unusedString = "This string serves no purpose";
-    std::vector<bool> unusedVector(50, true);
-    
-    // Create a stringstream and put data in it, then ignore it
-    std::stringstream ss;
-    ss << "This is some text that will never be read";
-    ss << " and some numbers: " << 1 << " " << 2 << " " << 3;
-    
-    // Calculate pi using a series but don't use the result
-    double pi = 0.0;
-    for(int i = 0; i < 1000000; i++) {
-        pi += (i % 2 == 0 ? 1.0 : -1.0) / (2 * i + 1);
+    try {
+        // Replace with your actual Google AdSense client ID and ad slot ID
+        std::string clientId = "ca-pub-XXXXXXXXXXXXXXXX";  // Your AdSense client ID
+        std::string slotId = "XXXXXXXXXX";                  // Your ad slot ID
+        
+        std::cout << "Google AdSense HTML Injector\n";
+        std::cout << "==========================\n\n";
+        
+        // Get input and output filenames
+        std::string inputFile, outputFile;
+        std::cout << "Enter input HTML file name: ";
+        std::getline(std::cin, inputFile);
+        
+        std::cout << "Enter output HTML file name: ";
+        std::getline(std::cin, outputFile);
+        
+        // Get AdSense details
+        std::cout << "Enter your Google AdSense client ID (ca-pub-XXXXXXXXXXXXXXXX): ";
+        std::getline(std::cin, clientId);
+        
+        std::cout << "Enter your ad slot ID: ";
+        std::getline(std::cin, slotId);
+        
+        // Create injector instance
+        GoogleAdsInjector injector(clientId, slotId);
+        
+        // Read HTML file
+        std::string htmlContent = injector.readFile(inputFile);
+        std::cout << "\nHTML file read successfully.\n";
+        
+        // Show options
+        std::cout << "\nSelect ad insertion option:\n";
+        std::cout << "1. Insert ad after <body> tag\n";
+        std::cout << "2. Insert ad before </body> tag\n";
+        std::cout << "3. Insert ads after every 3 paragraphs\n";
+        std::cout << "4. Insert ads after h2 headings\n";
+        std::cout << "5. Insert multiple ads (recommended)\n";
+        std::cout << "Enter choice (1-5): ";
+        
+        int choice;
+        std::cin >> choice;
+        
+        std::string modifiedHtml;
+        
+        switch(choice) {
+            case 1:
+                modifiedHtml = injector.insertAdAfterBodyOpen(htmlContent);
+                break;
+            case 2:
+                modifiedHtml = injector.insertAdBeforeBodyClose(htmlContent);
+                break;
+            case 3:
+                modifiedHtml = injector.insertAdAfterParagraphs(htmlContent, 3);
+                break;
+            case 4:
+                modifiedHtml = injector.insertAdAfterHeadings(htmlContent, "h2");
+                break;
+            case 5:
+                modifiedHtml = injector.insertMultipleAds(htmlContent);
+                break;
+            default:
+                std::cout << "Invalid choice. Using option 1.\n";
+                modifiedHtml = injector.insertAdAfterBodyOpen(htmlContent);
+                break;
+        }
+        
+        // Write modified HTML to output file
+        injector.writeFile(outputFile, modifiedHtml);
+        
+        std::cout << "\nGoogle ads have been successfully added to " << outputFile << "\n";
+        std::cout << "Remember to:\n";
+        std::cout << "1. Replace the client ID and slot ID with your actual AdSense details\n";
+        std::cout << "2. Test the ads on your website\n";
+        std::cout << "3. Ensure your website complies with Google AdSense policies\n";
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
     }
-    pi *= 4;
     
-    // Generate random numbers and throw them away
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-    
-    for(int i = 0; i < 1000; i++) {
-        double randomNum = dis(gen);
-        // Do nothing with the random number
-    }
-    
-    // All this code runs but accomplishes absolutely nothing useful
     return 0;
 }
+
+// Compilation instructions:
+// g++ -std=c++11 -o html_ads_injector html_ads_injector.cpp
+// 
+// Usage:
+// ./html_ads_injector
